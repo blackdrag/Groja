@@ -32,12 +32,16 @@ class JointCompilerTest extends Specification {
         result == classNames
 
         where:
-        fileNames                    || sources                                  || result       || caughtException
-        ["Test.groovy", "Test.java"] || ["interface Test{}", "interface Test{}"] || []           || MultipleCompilationErrorsException
-        ["Test.groovy", "J1.java"]   || ["interface Test{}", "interface J1{}"]   || ["Test"]     || null
-        ["Test.groovy"]              || ["interface Test{}"]                     || ["Test"]     || null
-        ["J1.java"]                  || ["class J1 implements Test{}"]           || []           || MultipleCompilationErrorsException
-        ["G1.groovy"]                || ["class G1 extends J2{}"]                || []           || MultipleCompilationErrorsException
-        ["G1.groovy", "G2.groovy"]   || ["interface G1{}", "interface G2{}"]     || ["G1", "G2"] || null
+        fileNames                    || sources                                          || result       || caughtException
+        ["Test.groovy", "Test.java"] || ["interface Test{}", "interface Test{}"]         || []           || MultipleCompilationErrorsException
+        ["Test.groovy", "J1.java"]   || ["interface Test{}", "interface J1{}"]           || ["Test"]     || null
+        ["Test.groovy"]              || ["interface Test{}"]                             || ["Test"]     || null
+        ["J1.java"]                  || ["class J1 implements Test{}"]                   || []           || MultipleCompilationErrorsException
+        ["G1.groovy"]                || ["class G1 extends J2{}"]                        || []           || MultipleCompilationErrorsException
+        ["G1.groovy", "G2.groovy"]   || ["interface G1{}", "interface G2{}"]             || ["G1", "G2"] || null
+        ["G1.groovy", "MyEnum.java",
+         "EnumAnnotation.java"]      || ["@EnumAnnotation(MyEnum.FOO) class G1{}",
+                                         "enum MyEnum{FOO}",
+                                         "@interface EnumAnnotation{ MyEnum value(); }"] || ["G1"]       || null
     }
 }
