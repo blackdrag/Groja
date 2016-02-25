@@ -86,7 +86,7 @@ class AstConverter2 extends GenericVisitorAdapter {
     @Override
     def visit(AnnotationDeclaration n, arg) {
         ClassNode cn = makeClass(n.name, n.modifiers, ClassHelper.OBJECT_TYPE, ClassNode.EMPTY_ARRAY, arg)
-        cn.modifiers |= 8192
+        cn.modifiers |= 8192 |  512
         def copy = changeEnvForInnerClass(cn, arg)
         super.visit(n, copy)
     }
@@ -113,6 +113,7 @@ class AstConverter2 extends GenericVisitorAdapter {
         if (arg.currentClassNode) {
             copy.enclosingClassNode = arg.currentClassNode
         }
+        return copy
     }
 
     @Override
@@ -249,11 +250,12 @@ class AstConverter2 extends GenericVisitorAdapter {
 
     @Override
     Object visit(AnnotationMemberDeclaration n, Object arg) {
-        ClassNode cn = arg.currentClass
-        MethodNode mn = cn.addMethod(n.name, n.modifiers, visit(n.type, arg), org.codehaus.groovy.ast.Parameter.EMPTY_ARRAY, null)
+        ClassNode cn = arg.currentClassNode
+        // TODO: Add exception here please
+        MethodNode mn = cn.addMethod(n.name, n.modifiers, visit(n.type, arg), org.codehaus.groovy.ast.Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null)
         if (n.defaultValue) {
             mn.annotationDefault = visit(n.defaultValue, arg)
-            mn.code = new ReturnStatement(visit(n.defaultValue,arg))
+            mn.code = new ReturnStatement(visit(n.defaultValue, arg))
         }
     }
 
@@ -482,31 +484,3 @@ class JavaSourceUnit extends SourceUnit {
         nextPhase()
     }
 }
-
-CompilerConfiguration config = new CompilerConfiguration(CompilerConfiguration.DEFAULT)
-config.targetDirectory = new File(".")
-def groovyCompilationUnit = new GroovyJavaJointCompiler2()
-
-// TODO:
-// resolve visitor: running
-// verifier:: running
-// annotation constant resolving?
-
-["Test.class","J1.class","G1.class"].each {
-    def file = new File(it)
-    file.exists()? file.delete():null;
-}
-
-groovyCompilationUnit.addSource("Test.groovy", "interface Test{}")
-groovyCompilationUnit.addSource("J1.java", "class J1 implements Test {}")
-groovyCompilationUnit.addSource("J2.java", "@interface F00 {public int x() default 1; public int y();}")
-groovyCompilationUnit.addSource("G1.groovy", "class G1 extends J1{}")
-
-groovyCompilationUnit.compile()
-
-["Test.class", "G1.class"].each {
-    assert new File(it).exists()
-}
-assert !(new File("J1.class").exists())
-
-println new File(".").list()
